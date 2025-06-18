@@ -1,0 +1,14 @@
+# Ignore all CSV files
+data/*.csv
+data/Training and Testing Sets/*.csv
+data/processed/*.csv
+models/components/*.joblib
+models/components/*.csv
+models/*.joblib
+models/*.h5
+*.h5
+*.hdf5
+*.pkl
+*.pyc
+__pycache__/
+.env 

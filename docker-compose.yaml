@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: airflow-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+
+  webserver:
+    build: .
+    container_name: airflow-webserver
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__FERNET_KEY: 'RsNaVQf0q-_2yaxXeZ_KN1xlKJrIUpcs4FONXnyzVhU='
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: 'postgresql+psycopg2://airflow:airflow@postgres/airflow'
+      AIRFLOW__WEBSERVER__RBAC: 'True'
+      AIRFLOW__WEBSERVER__DEFAULT_USER_ROLE: 'Admin'
+      PYTHONPATH: /opt/airflow/src:/opt/airflow/dags:/opt/airflow
+    volumes:
+      - ./data:/opt/airflow/data
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./src:/opt/airflow/src
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "
+      airflow db upgrade &&
+      airflow users create --username anouarFG --firstname Anouar --lastname Farroug --role Admin --email Anouarfarroug1@gmail.com --password anouar &&
+      airflow webserver"
+
+  scheduler:
+    build: .
+    container_name: airflow-scheduler
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__FERNET_KEY: 'RsNaVQf0q-_2yaxXeZ_KN1xlKJrIUpcs4FONXnyzVhU='
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: 'postgresql+psycopg2://airflow:airflow@postgres/airflow'
+      PYTHONPATH: /opt/airflow/src:/opt/airflow/dags:/opt/airflow
+    volumes:
+      - ./data:/opt/airflow/data
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./src:/opt/airflow/src
+    command: >
+      bash -c "
+      airflow db upgrade &&
+      airflow scheduler"
+
+volumes:
+  postgres-db-volume:
