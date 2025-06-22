@@ -1,3 +1,6 @@
+env_file:
+  - .env
+
 version: '3.8'
 
 services:
@@ -6,9 +9,9 @@ services:
     container_name: airflow-postgres
     restart: always
     environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ihabrajaoui
+      POSTGRES_DB: projet2
     ports:
       - "5432:5432"
     volumes:
@@ -33,6 +36,7 @@ services:
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
       - ./src:/opt/airflow/src
+      - ./data/processed:/opt/airflow/data/processed
     ports:
       - "8080:8080"
     command: >
@@ -63,5 +67,66 @@ services:
       airflow db upgrade &&
       airflow scheduler"
 
+  # FastAPI Inference API
+  ids-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: ids-api
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./src/api:/app/src/api
+      - ./data/processed:/app/data/processed
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      - webserver
+      - scheduler
+
+  # cAdvisor for container monitoring
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: always
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  # Prometheus for metrics scraping
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - cadvisor
+      - webserver
+      - ids-api
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
 volumes:
   postgres-db-volume:
+  grafana-storage:

@@ -9,6 +9,7 @@ import logging
 from typing import List, Dict, Any, Optional
 import uvicorn
 from datetime import datetime
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,6 +21,9 @@ app = FastAPI(
     description="Intrusion Detection System API for real-time network traffic analysis",
     version="1.0.0"
 )
+
+# Instrument FastAPI with Prometheus metrics
+Instrumentator().instrument(app).expose(app)
 
 # Add CORS middleware
 app.add_middleware(

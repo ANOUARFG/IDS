@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'airflow-webserver'
+    static_configs:
+      - targets: ['webserver:8080']
+
+  - job_name: 'fastapi-ids-api'
+    static_configs:
+      - targets: ['ids-api:8000']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080'] 
